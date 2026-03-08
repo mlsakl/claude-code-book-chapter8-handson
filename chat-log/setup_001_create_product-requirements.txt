@@ -1,0 +1,53 @@
+❯ /setup-project                                                                                                                                                                
+                                                                                                                                                                                
+● Searched for 1 pattern, read 1 file (ctrl+o to expand)                                                                                                                        
+                                                                                                                                                                                
+● docs/ideas/initial-requirements.md が見つかりました。TaskCLI というGit連携タスク管理CLIツールのアイデアメモですね。この内容を元にPRDを作成します。                            
+                                                                                                                                                                                
+● Skill(prd-writing)                                                                                                                                                            
+  ⎿  Successfully loaded skill · 2 tools allowed                                                                                                                                
+                                                                                                                                                                                
+● Read 1 file (ctrl+o to expand)                                                                                                                                                
+                                                                                                                                                                                
+● テンプレートを確認しました。docs/ideas/initial-requirements.md の内容を元に、PRDを作成します。                                                                                
+                                                                                                                                                                                
+● Write(docs/product-requirements.md)                                                                                                                                           
+  ⎿  Wrote 306 lines to docs/product-requirements.md                                                                                                                            
+     # プロダクト要求定義書 (Product Requirements Document)                                                                                                                     
+                                                                                                                                                                                
+     ## プロダクト概要                                                                                                                                                          
+                                                                                                                                                                                
+     ### 名称                                                                                                                                                                   
+     **TaskCLI** - Gitと一体化した開発者向けタスク管理CLIツール                                                                                                                 
+
+     ### プロダクトコンセプト                                                                                                                                                   
+     - **ターミナル完結**: GUIツールに切り替えることなく、ターミナル上で全てのタスク管理を完結させる
+     - **Git統合**: タスクとGitブランチ・コミット・PRを自動的に紐付け、開発フローをシームレスに連携する
+     … +296 lines (ctrl+o to expand)
+
+● ステップ1完了: docs/product-requirements.md を作成しました。
+
+  以下の内容でPRDを作成しています:                                                                                                                                              
+  
+  プロダクト概要                                                                                                                                                                
+  - TaskCLI: Gitと一体化した開発者向けタスク管理CLIツール
+  - コンセプト: ターミナル完結・Git統合・シンプル高速
+
+  ターゲットユーザー
+  - プライマリー: フリーランスエンジニア（複数プロジェクト並行）
+  - セカンダリー: スタートアップのテックリード（小規模チーム）
+
+  成功指標（KPI）
+  - 継続利用率60%以上（1ヶ月後）
+  - タスク管理時間50%削減
+  - 3ヶ月で100人のアクティブユーザー
+
+  機能要件
+  - P0: タスクCRUD・ステータス管理・Gitブランチ自動連携・ローカルJSONストレージ
+  - P1: GitHub Issues連携・タスク完了時の自動処理・検索/フィルタ・優先度/期限管理
+  - P2: チーム機能・作業時間記録・カレンダー表示
+
+  ---
+  内容を確認してください。承認いただけたら、次のドキュメント（機能設計書）の作成に進みます。
+
+✻ Baked for 1m 45s                                      
