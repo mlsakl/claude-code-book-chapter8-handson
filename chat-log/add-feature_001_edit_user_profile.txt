@@ -1,0 +1,868 @@
+❯ /add-feature ユーザープロフィール編集                                                                                                                                         
+
+● ステップ1: 準備とコンテキスト設定
+
+● Bash(mkdir -p /workspaces/claude-code-book-chapter8-handson/.steering/20260308-ユーザープロフィール編集 && touch
+      /workspaces/claude-code-book-chapter8-handson/.steering/20260308…)
+  ⎿  created
+
+● ステップ2: プロジェクト理解
+
+● Read 2 files (ctrl+o to expand)
+
+● ステップ3: 既存パターンの調査
+
+● Searched for 2 patterns, read 3 files (ctrl+o to expand)
+
+● ステップ4: 計画フェーズ
+
+● Skill(steering)
+  ⎿  Successfully loaded skill · 2 tools allowed
+
+● ステアリングテンプレートを読み込み、計画ファイルを生成します。
+
+● Read 3 files (ctrl+o to expand)
+
+● ステアリングファイルを生成します。
+
+● Write(.steering/20260308-ユーザープロフィール編集/requirements.md)
+  ⎿  Error writing file
+
+● Read 1 file (ctrl+o to expand)
+
+● Write(.steering/20260308-ユーザープロフィール編集/requirements.md)
+  ⎿  Wrote 69 lines to .steering/20260308-ユーザープロフィール編集/requirements.md
+     # 要求内容
+
+     ## 概要
+
+     TaskCLIユーザーが自分の名前・メールアドレス・GitHubユーザー名などの
+     プロフィール情報をターミナルから編集・確認できる機能を実装する。
+
+     ## 背景
+
+     現在、TaskCLIは `.task/config.json` に設定データを保存する設計が
+     … +59 lines (ctrl+o to expand)
+
+● Read 2 files (ctrl+o to expand)
+
+● Write(.steering/20260308-ユーザープロフィール編集/design.md)
+  ⎿  Wrote 194 lines to .steering/20260308-ユーザープロフィール編集/design.md
+     # 設計書
+
+     ## アーキテクチャ概要
+
+     既存のレイヤードアーキテクチャに従い、3層構造で実装する。
+
+     ```
+     CLIレイヤー (src/cli/commands/profile.ts)
+         ↓
+     サービスレイヤー (src/services/ProfileManager.ts)
+     … +184 lines (ctrl+o to expand)
+
+● Write(.steering/20260308-ユーザープロフィール編集/tasklist.md)
+  ⎿  Wrote 100 lines to .steering/20260308-ユーザープロフィール編集/tasklist.md
+     # タスクリスト
+
+     ## 🚨 タスク完全完了の原則
+
+     **このファイルの全タスクが完了するまで作業を継続すること**
+
+     ### 必須ルール
+     - **全てのタスクを`[x]`にすること**
+     - 「時間の都合により別タスクとして実施予定」は禁止
+     - 「実装が複雑すぎるため後回し」は禁止
+     … +90 lines (ctrl+o to expand)
+
+● ステップ5: 実装ループ開始
+
+● Searched for 1 pattern (ctrl+o to expand)
+
+● フェーズ1: 型定義とエラークラス
+
+  src/types/index.ts を作成します。
+
+● Bash(mkdir -p /workspaces/claude-code-book-chapter8-handson/src/types /workspaces/claude-code-book-chapter8-handson/src/storage /workspaces/claude-code-book-chapter8…)
+  ⎿  dirs created
+
+● Write(src/types/index.ts)
+  ⎿  Wrote 13 lines to src/types/index.ts
+     export interface UserProfile {
+       name?: string;    // 氏名
+       email?: string;   // メールアドレス
+       github?: string;  // GitHubユーザー名
+     }
+
+     export interface Config {
+       profile: UserProfile;
+     }
+
+     … +3 lines (ctrl+o to expand)
+
+● Write(src/types/errors.ts)
+  ⎿  Wrote 6 lines to src/types/errors.ts
+     export class ValidationError extends Error {
+       constructor(message: string) {
+         super(message);
+         this.name = 'ValidationError';
+       }
+     }
+
+
+● フェーズ1完了。tasklist.md を更新します。
+
+● Update(.steering/20260308-ユーザープロフィール編集/tasklist.md)
+  ⎿  Added 6 lines, removed 6 lines
+      14   
+      15  ## フェーズ1: 型定義とエラークラス
+      16   
+      17 -- [ ] `src/types/index.ts` に型を追加                                                                                                                          
+      18 -  - [ ] `UserProfile` インターフェース（name, email, github の Optional フィールド）                                                                           
+      19 -  - [ ] `Config` インターフェース（profile フィールドを持つ）                                                                                                  
+      20 -  - [ ] `ProfileKey` 型エイリアス（'name' | 'email' | 'github'）                                                                                               
+      17 +- [x] `src/types/index.ts` に型を追加                                                                                                                          
+      18 +  - [x] `UserProfile` インターフェース（name, email, github の Optional フィールド）                                                                           
+      19 +  - [x] `Config` インターフェース（profile フィールドを持つ）                                                                                                  
+      20 +  - [x] `ProfileKey` 型エイリアス（'name' | 'email' | 'github'）                                                                                               
+      21   
+      22 -- [ ] `src/types/errors.ts` を新規作成                                                                                                                         
+      23 -  - [ ] `ValidationError` クラスを実装（Error を継承）                                                                                                         
+      22 +- [x] `src/types/errors.ts` を新規作成                                                                                                                         
+      23 +  - [x] `ValidationError` クラスを実装（Error を継承）                                                                                                         
+      24   
+      25  ## フェーズ2: ストレージ層
+      26   
+
+● フェーズ2: ConfigStorage 実装
+
+● Write(src/storage/ConfigStorage.ts)
+  ⎿  Wrote 38 lines to src/storage/ConfigStorage.ts
+     import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
+     import { join } from 'path';
+     import type { Config } from '../types/index.js';
+
+     const TASK_DIR = '.task';
+     const CONFIG_FILE = 'config.json';
+
+     const DEFAULT_CONFIG: Config = {
+       profile: {},
+     };
+     … +28 lines (ctrl+o to expand)
+
+● Update(.steering/20260308-ユーザープロフィール編集/tasklist.md)
+  ⎿  Added 3 lines, removed 3 lines
+      24   
+      25  ## フェーズ2: ストレージ層
+      26   
+      27 -- [ ] `src/storage/ConfigStorage.ts` を新規作成                                                                                                                
+      28 -  - [ ] `load()` メソッド（ファイル未存在時はデフォルト Config を返す）                                                                                        
+      29 -  - [ ] `save(config: Config)` メソッド（.task/ ディレクトリ自動作成）                                                                                         
+      27 +- [x] `src/storage/ConfigStorage.ts` を新規作成                                                                                                                
+      28 +  - [x] `load()` メソッド（ファイル未存在時はデフォルト Config を返す）                                                                                        
+      29 +  - [x] `save(config: Config)` メソッド（.task/ ディレクトリ自動作成）                                                                                         
+      30   
+      31  ## フェーズ3: サービス層
+      32   
+
+● フェーズ3: ProfileManager 実装
+
+● Write(src/services/ProfileManager.ts)
+  ⎿  Wrote 28 lines to src/services/ProfileManager.ts
+     import type { ConfigStorage } from '../storage/ConfigStorage.js';
+     import type { ProfileKey, UserProfile } from '../types/index.js';
+     import { PROFILE_KEYS } from '../types/index.js';
+     import { ValidationError } from '../types/errors.js';
+
+     export class ProfileManager {
+       constructor(private readonly storage: ConfigStorage) {}
+
+       getProfile(): UserProfile {
+         const config = this.storage.load();
+     … +18 lines (ctrl+o to expand)
+
+● Update(.steering/20260308-ユーザープロフィール編集/tasklist.md)
+  ⎿  Added 5 lines, removed 5 lines
+      30   
+      31  ## フェーズ3: サービス層
+      32   
+      33 -- [ ] `src/services/ProfileManager.ts` を新規作成                                                                                                              
+      34 -  - [ ] `getProfile()` メソッド（ConfigStorage から読み込む）                                                                                                  
+      35 -  - [ ] `setProfileField(key: ProfileKey, value: string)` メソッド                                                                                             
+      36 -    - [ ] 空文字列バリデーション（ValidationError をスロー）                                                                                                   
+      37 -    - [ ] プロフィール更新と保存                                                                                                                               
+      33 +- [x] `src/services/ProfileManager.ts` を新規作成                                                                                                              
+      34 +  - [x] `getProfile()` メソッド（ConfigStorage から読み込む）                                                                                                  
+      35 +  - [x] `setProfileField(key: ProfileKey, value: string)` メソッド                                                                                             
+      36 +    - [x] 空文字列バリデーション（ValidationError をスロー）                                                                                                   
+      37 +    - [x] プロフィール更新と保存                                                                                                                               
+      38   
+      39  ## フェーズ4: CLIコマンド
+      40   
+
+● フェーズ4: CLIコマンド実装
+
+● Write(src/cli/commands/profile.ts)
+  ⎿  Wrote 47 lines to src/cli/commands/profile.ts
+     import { PROFILE_KEYS } from '../../types/index.js';
+     import type { ProfileKey } from '../../types/index.js';
+     import { ValidationError } from '../../types/errors.js';
+     import { ConfigStorage } from '../../storage/ConfigStorage.js';
+     import { ProfileManager } from '../../services/ProfileManager.js';
+
+     const LABELS: Record<ProfileKey, string> = {
+       name: '氏名',
+       email: 'メールアドレス',
+       github: 'GitHubユーザー名',
+     … +37 lines (ctrl+o to expand)
+
+● Update(.steering/20260308-ユーザープロフィール編集/tasklist.md)
+  ⎿  Added 5 lines, removed 5 lines
+      38   
+      39  ## フェーズ4: CLIコマンド
+      40   
+      41 -- [ ] `src/cli/commands/profile.ts` を新規作成                                                                                                                 
+      42 -  - [ ] `profile show` サブコマンド（name/email/github を表示）                                                                                                
+      43 -  - [ ] `profile set <key> <value>` サブコマンド                                                                                                               
+      44 -    - [ ] 無効なキーのバリデーション（ValidationError をキャッチして表示）                                                                                     
+      45 -    - [ ] 成功時メッセージ表示                                                                                                                                 
+      41 +- [x] `src/cli/commands/profile.ts` を新規作成                                                                                                                 
+      42 +  - [x] `profile show` サブコマンド（name/email/github を表示）                                                                                                
+      43 +  - [x] `profile set <key> <value>` サブコマンド                                                                                                               
+      44 +    - [x] 無効なキーのバリデーション（ValidationError をキャッチして表示）                                                                                     
+      45 +    - [x] 成功時メッセージ表示                                                                                                                                 
+      46   
+      47  ## フェーズ5: テスト
+      48   
+
+● フェーズ5: テスト実装
+
+● Write(tests/unit/storage/ConfigStorage.test.ts)
+  ⎿  Wrote 72 lines to tests/unit/storage/ConfigStorage.test.ts
+     import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+     import { mkdtempSync, rmSync, writeFileSync, mkdirSync } from 'fs';
+     import { join } from 'path';
+     import { tmpdir } from 'os';
+     import { ConfigStorage } from '../../../src/storage/ConfigStorage.js';
+
+     describe('ConfigStorage', () => {
+       let tmpDir: string;
+
+       beforeEach(() => {
+     … +62 lines (ctrl+o to expand)
+
+● Write(tests/unit/services/ProfileManager.test.ts)
+  ⎿  Wrote 72 lines to tests/unit/services/ProfileManager.test.ts
+     import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+     import { mkdtempSync, rmSync } from 'fs';
+     import { join } from 'path';
+     import { tmpdir } from 'os';
+     import { ConfigStorage } from '../../../src/storage/ConfigStorage.js';
+     import { ProfileManager } from '../../../src/services/ProfileManager.js';
+     import { ValidationError } from '../../../src/types/errors.js';
+
+     describe('ProfileManager', () => {
+       let tmpDir: string;
+     … +62 lines (ctrl+o to expand)
+
+● Update(.steering/20260308-ユーザープロフィール編集/tasklist.md)
+  ⎿  Added 12 lines, removed 12 lines
+      46   
+      47  ## フェーズ5: テスト
+      48   
+      49 -- [ ] `tests/unit/storage/ConfigStorage.test.ts` を新規作成                                                                                                    
+      50 -  - [ ] `load()`: ファイル未存在時にデフォルト値を返す                                                                                                         
+      51 -  - [ ] `load()`: 既存ファイルの内容を返す                                                                                                                     
+      52 -  - [ ] `save()`: ファイルに正しく書き込む                                                                                                                     
+      53 -  - [ ] `save()`: `.task/` ディレクトリを自動作成する                                                                                                          
+      49 +- [x] `tests/unit/storage/ConfigStorage.test.ts` を新規作成                                                                                                    
+      50 +  - [x] `load()`: ファイル未存在時にデフォルト値を返す                                                                                                         
+      51 +  - [x] `load()`: 既存ファイルの内容を返す                                                                                                                     
+      52 +  - [x] `save()`: ファイルに正しく書き込む                                                                                                                     
+      53 +  - [x] `save()`: `.task/` ディレクトリを自動作成する                                                                                                          
+      54   
+      55 -- [ ] `tests/unit/services/ProfileManager.test.ts` を新規作成                                                                                                  
+      56 -  - [ ] `getProfile()`: 空のプロフィールを返す（未設定時）                                                                                                     
+      57 -  - [ ] `getProfile()`: 設定済みプロフィールを返す                                                                                                             
+      58 -  - [ ] `setProfileField()`: nameを正常に設定できる                                                                                                            
+      59 -  - [ ] `setProfileField()`: emailを正常に設定できる                                                                                                           
+      60 -  - [ ] `setProfileField()`: githubを正常に設定できる                                                                                                          
+      61 -  - [ ] `setProfileField()`: 空文字列でValidationErrorをスローする                                                                                             
+      55 +- [x] `tests/unit/services/ProfileManager.test.ts` を新規作成                                                                                                  
+      56 +  - [x] `getProfile()`: 空のプロフィールを返す（未設定時）                                                                                                     
+      57 +  - [x] `getProfile()`: 設定済みプロフィールを返す                                                                                                             
+      58 +  - [x] `setProfileField()`: nameを正常に設定できる                                                                                                            
+      59 +  - [x] `setProfileField()`: emailを正常に設定できる                                                                                                           
+      60 +  - [x] `setProfileField()`: githubを正常に設定できる                                                                                                          
+      61 +  - [x] `setProfileField()`: 空文字列でValidationErrorをスローする                                                                                             
+      62   
+      63  ## フェーズ6: 品質チェックと修正
+      64   
+
+● ステップ6: 実装検証 & ステップ7: テスト実行
+
+● Bash(npm test 2>&1)
+  ⎿  Error: Exit code 127
+
+     > claude-code-book-chapter8@0.1.0 test
+     > vitest run
+
+     sh: 1: vitest: not found
+
+● Bash(npm install 2>&1 | tail -5)
+  ⎿  To address all issues (including breaking changes), run:
+       npm audit fix --force
+
+     Run `npm audit` for details.
+  ⎿  (timeout 1m)
+
+● Bash(npm test 2>&1)
+  ⎿  > claude-code-book-chapter8@0.1.0 test
+     > vitest run
+     … +11 lines (ctrl+o to expand)
+
+● 全テストパス。続けて lint と typecheck を実行します。
+
+● Bash(npm run lint 2>&1 && npm run typecheck 2>&1)
+  ⎿  > claude-code-book-chapter8@0.1.0 lint
+     > eslint .
+     … +3 lines (ctrl+o to expand)
+  ⎿  (timeout 1m)
+
+● 全チェック通過。tasklist.md のフェーズ6を更新します。
+
+● Update(.steering/20260308-ユーザープロフィール編集/tasklist.md)
+  ⎿  Added 6 lines, removed 6 lines
+      62   
+      63  ## フェーズ6: 品質チェックと修正
+      64   
+      65 -- [ ] すべてのテストが通ることを確認                                                                                                                           
+      66 -  - [ ] `npm test`                                                                                                                                             
+      67 -- [ ] リントエラーがないことを確認                                                                                                                             
+      68 -  - [ ] `npm run lint`                                                                                                                                         
+      69 -- [ ] 型エラーがないことを確認                                                                                                                                 
+      70 -  - [ ] `npm run typecheck`                                                                                                                                    
+      65 +- [x] すべてのテストが通ることを確認                                                                                                                           
+      66 +  - [x] `npm test`                                                                                                                                             
+      67 +- [x] リントエラーがないことを確認                                                                                                                             
+      68 +  - [x] `npm run lint`                                                                                                                                         
+      69 +- [x] 型エラーがないことを確認                                                                                                                                 
+      70 +  - [x] `npm run typecheck`                                                                                                                                    
+      71   
+      72  ## フェーズ7: ドキュメント更新
+      73   
+
+● ステップ6: 実装検証（サブエージェント起動）
+
+● implementation-validator(Implementation quality validation)
+  ⎿  Done (17 tool uses · 38.2k tokens · 2m 10s)
+  (ctrl+o to expand)
+
+● バリデーターの指摘に基づき修正します。必須2件と推奨3件を修正します。
+
+  修正1: エラー階層を正しく実装
+
+● Read 1 file (ctrl+o to expand)
+
+● Write(src/types/errors.ts)
+  ⎿  Added 16 lines, removed 6 lines
+       1 -export class ValidationError extends Error {                                                                                                                   
+       2 -  constructor(message: string) {                                                                                                                               
+       3 -    super(message);                                                                                                                                            
+       4 -    this.name = 'ValidationError';                                                                                                                             
+       5 -  }                                                                                                                                                            
+       6 -}                                                                                                                                                              
+       1 +export class TaskCLIError extends Error {                                                                                                                      
+       2 +  constructor(                                                                                                                                                 
+       3 +    message: string,                                                                                                                                           
+       4 +    public readonly code: number = 1,                                                                                                                          
+       5 +  ) {                                                                                                                                                          
+       6 +    super(message);                                                                                                                                            
+       7 +    this.name = 'TaskCLIError';                                                                                                                                
+       8 +  }                                                                                                                                                            
+       9 +}                                                                                                                                                              
+      10 +                                                                                                                                                               
+      11 +export class ValidationError extends TaskCLIError {                                                                                                            
+      12 +  constructor(message: string) {                                                                                                                               
+      13 +    super(message);                                                                                                                                            
+      14 +    this.name = 'ValidationError';                                                                                                                             
+      15 +  }                                                                                                                                                            
+      16 +}                                                                                                                                                              
+
+● 修正2: アトミック書き込み + chmod 600
+
+● Read 1 file (ctrl+o to expand)
+
+● Write(src/storage/ConfigStorage.ts)
+  ⎿  Added 42 lines, removed 38 lines
+       1 -import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';                                                                                       
+       2 -import { join } from 'path';                                                                                                                                   
+       3 -import type { Config } from '../types/index.js';                                                                                                               
+       4 -                                                                                                                                                               
+       5 -const TASK_DIR = '.task';                                                                                                                                      
+       6 -const CONFIG_FILE = 'config.json';                                                                                                                             
+       7 -                                                                                                                                                               
+       8 -const DEFAULT_CONFIG: Config = {                                                                                                                               
+       9 -  profile: {},                                                                                                                                                 
+      10 -};                                                                                                                                                             
+      11 -                                                                                                                                                               
+      12 -export class ConfigStorage {                                                                                                                                   
+      13 -  private readonly configPath: string;                                                                                                                         
+      14 -  private readonly taskDir: string;                                                                                                                            
+      15 -                                                                                                                                                               
+      16 -  constructor(basePath: string = process.cwd()) {                                                                                                              
+      17 -    this.taskDir = join(basePath, TASK_DIR);                                                                                                                   
+      18 -    this.configPath = join(this.taskDir, CONFIG_FILE);                                                                                                         
+      19 -  }                                                                                                                                                            
+      20 -                                                                                                                                                               
+      21 -  load(): Config {                                                                                                                                             
+      22 -    if (!existsSync(this.configPath)) {                                                                                                                        
+      23 -      return structuredClone(DEFAULT_CONFIG);                                                                                                                  
+      24 -    }                                                                                                                                                          
+      25 -    const raw = readFileSync(this.configPath, 'utf-8');                                                                                                        
+      26 -    const parsed = JSON.parse(raw) as Partial<Config>;                                                                                                         
+      27 -    return {                                                                                                                                                   
+      28 -      profile: parsed.profile ?? {},                                                                                                                           
+      29 -    };                                                                                                                                                         
+      30 -  }                                                                                                                                                            
+      31 -                                                                                                                                                               
+      32 -  save(config: Config): void {                                                                                                                                 
+      33 -    if (!existsSync(this.taskDir)) {                                                                                                                           
+      34 -      mkdirSync(this.taskDir, { recursive: true });                                                                                                            
+      35 -    }                                                                                                                                                          
+      36 -    writeFileSync(this.configPath, JSON.stringify(config, null, 2), 'utf-8');                                                                                  
+      37 -  }                                                                                                                                                            
+      38 -}                                                                                                                                                              
+       1 +import { chmodSync, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'fs';                                                                
+       2 +import { join } from 'path';                                                                                                                                   
+       3 +import type { Config } from '../types/index.js';                                                                                                               
+       4 +                                                                                                                                                               
+       5 +const TASK_DIR = '.task';                                                                                                                                      
+       6 +const CONFIG_FILE = 'config.json';                                                                                                                             
+       7 +                                                                                                                                                               
+       8 +const DEFAULT_CONFIG: Config = {                                                                                                                               
+       9 +  profile: {},                                                                                                                                                 
+      10 +};                                                                                                                                                             
+      11 +                                                                                                                                                               
+      12 +export class ConfigStorage {                                                                                                                                   
+      13 +  private readonly configPath: string;                                                                                                                         
+      14 +  private readonly taskDir: string;                                                                                                                            
+      15 +                                                                                                                                                               
+      16 +  constructor(basePath: string = process.cwd()) {                                                                                                              
+      17 +    this.taskDir = join(basePath, TASK_DIR);                                                                                                                   
+      18 +    this.configPath = join(this.taskDir, CONFIG_FILE);                                                                                                         
+      19 +  }                                                                                                                                                            
+      20 +                                                                                                                                                               
+      21 +  load(): Config {                                                                                                                                             
+      22 +    if (!existsSync(this.configPath)) {                                                                                                                        
+      23 +      return structuredClone(DEFAULT_CONFIG);                                                                                                                  
+      24 +    }                                                                                                                                                          
+      25 +    const raw = readFileSync(this.configPath, 'utf-8');                                                                                                        
+      26 +    const parsed = JSON.parse(raw) as Partial<Config>;                                                                                                         
+      27 +    return {                                                                                                                                                   
+      28 +      profile: parsed.profile ?? {},                                                                                                                           
+      29 +    };                                                                                                                                                         
+      30 +  }                                                                                                                                                            
+      31 +                                                                                                                                                               
+      32 +  save(config: Config): void {                                                                                                                                 
+      33 +    if (!existsSync(this.taskDir)) {                                                                                                                           
+      34 +      mkdirSync(this.taskDir, { recursive: true });                                                                                                            
+      35 +    }                                                                                                                                                          
+      36 +    // アトミック書き込み: 一時ファイルに書き込んでからリネーム                                                                                                
+      37 +    const tmpPath = `${this.configPath}.tmp`;                                                                                                                  
+      38 +    writeFileSync(tmpPath, JSON.stringify(config, null, 2), 'utf-8');                                                                                          
+      39 +    renameSync(tmpPath, this.configPath);                                                                                                                      
+      40 +    chmodSync(this.configPath, 0o600);                                                                                                                         
+      41 +  }                                                                                                                                                            
+      42 +}                                                                                                                                                              
+
+● 修正3: CLIレイヤーの依存関係修正（DI + 二重バリデーション排除）
+                                                       
+● Read 1 file (ctrl+o to expand)    
+                                                                                                                                                                                
+● Write(src/cli/commands/profile.ts)                   
+  ⎿  Added 35 lines, removed 47 lines                                                                                                                                           
+       1 -import { PROFILE_KEYS } from '../../types/index.js';                                                                                                                
+       2 -import type { ProfileKey } from '../../types/index.js';                                                                                                               
+       3 -import { ValidationError } from '../../types/errors.js';                                                                                                              
+       4 -import { ConfigStorage } from '../../storage/ConfigStorage.js';                                                                                                       
+       5 -import { ProfileManager } from '../../services/ProfileManager.js';                                                                                                    
+       6 -                                                                                                                                                                      
+       7 -const LABELS: Record<ProfileKey, string> = {                                                                                                                        
+       8 -  name: '氏名',                                                                                                                                                
+       9 -  email: 'メールアドレス',                                                                                                                                     
+      10 -  github: 'GitHubユーザー名',                                                                                                                                  
+      11 -};                                                                                                                                                             
+      12 -                                                                                                                                                               
+      13 -export function runProfileShow(): void {                                                                                                                       
+      14 -  const storage = new ConfigStorage();                                                                                                                         
+      15 -  const manager = new ProfileManager(storage);                                                                                                                 
+      16 -  const profile = manager.getProfile();                                                                                                                        
+      17 -                                                                                                                                                               
+      18 -  console.log('プロフィール:');                                                                                                                                
+      19 -  for (const key of PROFILE_KEYS) {                                                                                                                            
+      20 -    const label = LABELS[key];                                                                                                                                 
+      21 -    const value = profile[key] ?? '未設定';                                                                                                                    
+      22 -    console.log(`  ${label}: ${value}`);                                                                                                                       
+      23 -  }                                                                                                                                                            
+      24 -}                                                                                                                                                              
+      25 -                                                                                                                                                               
+      26 -export function runProfileSet(key: string, value: string): void {                                                                                              
+      27 -  if (!PROFILE_KEYS.includes(key as ProfileKey)) {                                                                                                             
+      28 -    console.error(                                                                                                                                             
+      29 -      `エラー: 無効なキーです: "${key}"。使用可能なキー: ${PROFILE_KEYS.join(', ')}`,                                                                          
+      30 -    );                                                                                                                                                         
+      31 -    process.exit(1);                                                                                                                                           
+      32 -  }                                                                                                                                                            
+      33 -                                                                                                                                                               
+      34 -  try {                                                                                                                                                        
+      35 -    const storage = new ConfigStorage();                                                                                                                       
+      36 -    const manager = new ProfileManager(storage);                                                                                                               
+      37 -    manager.setProfileField(key as ProfileKey, value);                                                                                                         
+      38 -    const label = LABELS[key as ProfileKey];                                                                                                                   
+      39 -    console.log(`プロフィールを更新しました: ${label} = ${value.trim()}`);                                                                                     
+      40 -  } catch (error) {                                                                                                                                            
+      41 -    if (error instanceof ValidationError) {                                                                                                                    
+      42 -      console.error(`エラー: ${error.message}`);                                                                                                               
+      43 -      process.exit(1);                                                                                                                                         
+      44 -    }                                                                                                                                                          
+      45 -    throw error;                                                                                                                                               
+      46 -  }                                                                                                                                                            
+      47 -}                                                                                                                                                              
+       1 +import { PROFILE_KEYS } from '../../types/index.js';                                                                                                           
+       2 +import type { ProfileKey } from '../../types/index.js';                                                                                                        
+       3 +import { ValidationError } from '../../types/errors.js';                                                                                                       
+       4 +import type { ProfileManager } from '../../services/ProfileManager.js';                                                                                        
+       5 +                                                                                                                                                               
+       6 +const LABELS: Record<ProfileKey, string> = {                                                                                                                   
+       7 +  name: '氏名',                                                                                                                                                
+       8 +  email: 'メールアドレス',                                                                                                                                     
+       9 +  github: 'GitHubユーザー名',                                                                                                                                  
+      10 +};                                                                                                                                                             
+      11 +                                                                                                                                                               
+      12 +export function runProfileShow(manager: ProfileManager): void {                                                                                                
+      13 +  const profile = manager.getProfile();                                                                                                                        
+      14 +                                                                                                                                                               
+      15 +  console.log('プロフィール:');                                                                                                                                
+      16 +  for (const key of PROFILE_KEYS) {                                                                                                                            
+      17 +    const label = LABELS[key];                                                                                                                                 
+      18 +    const value = profile[key] ?? '未設定';                                                                                                                    
+      19 +    console.log(`  ${label}: ${value}`);                                                                                                                       
+      20 +  }                                                                                                                                                            
+      21 +}                                                                                                                                                              
+      22 +                                                                                                                                                               
+      23 +export function runProfileSet(manager: ProfileManager, key: string, value: string): void {                                                                     
+      24 +  try {                                                                                                                                                        
+      25 +    manager.setProfileField(key as ProfileKey, value);                                                                                                         
+      26 +    const label = LABELS[key as ProfileKey] ?? key;                                                                                                            
+      27 +    console.log(`プロフィールを更新しました: ${label} = ${value.trim()}`);                                                                                     
+      28 +  } catch (error) {                                                                                                                                            
+      29 +    if (error instanceof ValidationError) {                                                                                                                    
+      30 +      console.error(`エラー: ${error.message}`);                                                                                                               
+      31 +      process.exit(1);                                                                                                                                         
+      32 +    }                                                                                                                                                          
+      33 +    throw error;                                                                                                                                               
+      34 +  }                                                                                                                                                            
+      35 +}                                                                                                                                                              
+
+● 修正4: ProfileManager の無効キーバリデーション（サービス層に一本化）
+                                                       
+● Read 1 file (ctrl+o to expand)                       
+                                                                                                                                                                                
+● テストに Given/When/Then スタイルと無効キーのテストケースを追加します。
+                                                                                                                                                                                
+● Read 1 file (ctrl+o to expand)                                                                                                                                              
+                                                                                                                                                                                
+● Write(tests/unit/services/ProfileManager.test.ts)                                                                                                                             
+  ⎿  Added 125 lines, removed 72 lines                                                                                                                                          
+        1 -import { describe, it, expect, beforeEach, afterEach } from 'vitest';                                                                                                
+        2 -import { mkdtempSync, rmSync } from 'fs';                                                                                                                            
+        3 -import { join } from 'path';                                                                                                                                         
+        4 -import { tmpdir } from 'os';                                                                                                                                         
+        5 -import { ConfigStorage } from '../../../src/storage/ConfigStorage.js';                                                                                               
+        6 -import { ProfileManager } from '../../../src/services/ProfileManager.js';                                                                                            
+        7 -import { ValidationError } from '../../../src/types/errors.js';                                                                                                    
+        8 -                                                                                                                                                              
+        9 -describe('ProfileManager', () => {                                                                                                                            
+       10 -  let tmpDir: string;                                                                                                                                         
+       11 -  let storage: ConfigStorage;                                                                                                                                 
+       12 -  let manager: ProfileManager;                                                                                                                                
+       13 -                                                                                                                                                              
+       14 -  beforeEach(() => {                                                                                                                                          
+       15 -    tmpDir = mkdtempSync(join(tmpdir(), 'taskcli-test-'));                                                                                                    
+       16 -    storage = new ConfigStorage(tmpDir);                                                                                                                      
+       17 -    manager = new ProfileManager(storage);                                                                                                                    
+       18 -  });                                                                                                                                                         
+       19 -                                                                                                                                                              
+       20 -  afterEach(() => {                                                                                                                                           
+       21 -    rmSync(tmpDir, { recursive: true, force: true });                                                                                                         
+       22 -  });                                                                                                                                                         
+       23 -                                                                                                                                                              
+       24 -  describe('getProfile()', () => {                                                                                                                            
+       25 -    it('未設定時は空のプロフィールを返す', () => {                                                                                                            
+       26 -      const profile = manager.getProfile();                                                                                                                   
+       27 -      expect(profile).toEqual({});                                                                                                                            
+       28 -    });                                                                                                                                                       
+       29 -                                                                                                                                                              
+       30 -    it('設定済みプロフィールを返す', () => {                                                                                                                  
+       31 -      manager.setProfileField('name', '山田健二');                                                                                                            
+       32 -      const profile = manager.getProfile();                                                                                                                   
+       33 -      expect(profile.name).toBe('山田健二');                                                                                                                  
+       34 -    });                                                                                                                                                       
+       35 -  });                                                                                                                                                         
+       36 -                                                                                                                                                              
+       37 -  describe('setProfileField()', () => {                                                                                                                       
+       38 -    it('nameを正常に設定できる', () => {                                                                                                                      
+       39 -      const profile = manager.setProfileField('name', '山田健二');                                                                                            
+       40 -      expect(profile.name).toBe('山田健二');                                                                                                                  
+       41 -    });                                                                                                                                                       
+       42 -                                                                                                                                                              
+       43 -    it('emailを正常に設定できる', () => {                                                                                                                     
+       44 -      const profile = manager.setProfileField('email', 'ken@example.com');                                                                                    
+       45 -      expect(profile.email).toBe('ken@example.com');                                                                                                          
+       46 -    });                                                                                                                                                       
+       47 -                                                                                                                                                              
+       48 -    it('githubを正常に設定できる', () => {                                                                                                                    
+       49 -      const profile = manager.setProfileField('github', 'ken-yamada');                                                                                        
+       50 -      expect(profile.github).toBe('ken-yamada');                                                                                                              
+       51 -    });                                                                                                                                                       
+       52 -                                                                                                                                                              
+       53 -    it('空文字列でValidationErrorをスローする', () => {                                                                                                       
+       54 -      expect(() => manager.setProfileField('name', '')).toThrow(ValidationError);                                                                             
+       55 -    });                                                                                                                                                       
+       56 -                                                                                                                                                              
+       57 -    it('スペースのみの値でValidationErrorをスローする', () => {                                                                                               
+       58 -      expect(() => manager.setProfileField('email', '   ')).toThrow(ValidationError);                                                                         
+       59 -    });                                                                                                                                                       
+       60 -                                                                                                                                                              
+       61 -    it('既存の値を上書きできる', () => {                                                                                                                      
+       62 -      manager.setProfileField('name', '旧名前');                                                                                                              
+       63 -      const profile = manager.setProfileField('name', '新名前');                                                                                              
+       64 -      expect(profile.name).toBe('新名前');                                                                                                                    
+       65 -    });                                                                                                                                                       
+       66 -                                                                                                                                                              
+       67 -    it('値の前後のスペースをトリムして保存する', () => {                                                                                                      
+       68 -      const profile = manager.setProfileField('name', '  山田健二  ');                                                                                        
+       69 -      expect(profile.name).toBe('山田健二');                                                                                                                  
+       70 -    });                                                                                                                                                       
+       71 -  });                                                                                                                                                         
+       72 -});                                                                                                                                                           
+        1 +import { describe, it, expect, beforeEach, afterEach } from 'vitest';                                                                                         
+        2 +import { mkdtempSync, rmSync } from 'fs';                                                                                                                     
+        3 +import { join } from 'path';                                                                                                                                  
+        4 +import { tmpdir } from 'os';                                                                                                                                  
+        5 +import { ConfigStorage } from '../../../src/storage/ConfigStorage.js';                                                                                        
+        6 +import { ProfileManager } from '../../../src/services/ProfileManager.js';                                                                                     
+        7 +import { ValidationError } from '../../../src/types/errors.js';                                                                                               
+        8 +import type { ProfileKey } from '../../../src/types/index.js';                                                                                                
+        9 +                                                                                                                                                              
+       10 +describe('ProfileManager', () => {                                                                                                                            
+       11 +  let tmpDir: string;                                                                                                                                         
+       12 +  let storage: ConfigStorage;                                                                                                                                 
+       13 +  let manager: ProfileManager;                                                                                                                                
+       14 +                                                                                                                                                              
+       15 +  beforeEach(() => {                                                                                                                                          
+       16 +    tmpDir = mkdtempSync(join(tmpdir(), 'taskcli-test-'));                                                                                                    
+       17 +    storage = new ConfigStorage(tmpDir);                                                                                                                      
+       18 +    manager = new ProfileManager(storage);                                                                                                                    
+       19 +  });                                                                                                                                                         
+       20 +                                                                                                                                                              
+       21 +  afterEach(() => {                                                                                                                                           
+       22 +    rmSync(tmpDir, { recursive: true, force: true });                                                                                                         
+       23 +  });                                                                                                                                                         
+       24 +                                                                                                                                                              
+       25 +  describe('getProfile()', () => {                                                                                                                            
+       26 +    it('未設定時は空のプロフィールを返す', () => {                                                                                                            
+       27 +      // Given: 何も設定されていない状態                                                                                                                      
+       28 +                                                                                                                                                              
+       29 +      // When: プロフィールを取得する                                                                                                                         
+       30 +      const profile = manager.getProfile();                                                                                                                   
+       31 +                                                                                                                                                              
+       32 +      // Then: 空のプロフィールが返る                                                                                                                         
+       33 +      expect(profile).toEqual({});                                                                                                                            
+       34 +    });                                                                                                                                                       
+       35 +                                                                                                                                                              
+       36 +    it('設定済みプロフィールを返す', () => {                                                                                                                  
+       37 +      // Given: nameが設定済みの状態                                                                                                                          
+       38 +      manager.setProfileField('name', '山田健二');                                                                                                            
+       39 +                                                                                                                                                              
+       40 +      // When: プロフィールを取得する                                                                                                                         
+       41 +      const profile = manager.getProfile();                                                                                                                   
+       42 +                                                                                                                                                              
+       43 +      // Then: 設定した値が返る                                                                                                                               
+       44 +      expect(profile.name).toBe('山田健二');                                                                                                                  
+       45 +    });                                                                                                                                                       
+       46 +  });                                                                                                                                                         
+       47 +                                                                                                                                                              
+       48 +  describe('setProfileField()', () => {                                                                                                                       
+       49 +    it('nameを正常に設定できる', () => {                                                                                                                      
+       50 +      // Given: 有効な名前                                                                                                                                    
+       51 +      const name = '山田健二';                                                                                                                                
+       52 +                                                                                                                                                              
+       53 +      // When: nameフィールドを設定する                                                                                                                       
+       54 +      const profile = manager.setProfileField('name', name);                                                                                                  
+       55 +                                                                                                                                                              
+       56 +      // Then: 設定した値が返る                                                                                                                               
+       57 +      expect(profile.name).toBe('山田健二');                                                                                                                  
+       58 +    });                                                                                                                                                       
+       59 +                                                                                                                                                              
+       60 +    it('emailを正常に設定できる', () => {                                                                                                                     
+       61 +      // Given: 有効なメールアドレス                                                                                                                          
+       62 +      const email = 'ken@example.com';                                                                                                                        
+       63 +                                                                                                                                                              
+       64 +      // When: emailフィールドを設定する                                                                                                                      
+       65 +      const profile = manager.setProfileField('email', email);                                                                                                
+       66 +                                                                                                                                                              
+       67 +      // Then: 設定した値が返る                                                                                                                               
+       68 +      expect(profile.email).toBe('ken@example.com');                                                                                                          
+       69 +    });                                                                                                                                                       
+       70 +                                                                                                                                                              
+       71 +    it('githubを正常に設定できる', () => {                                                                                                                    
+       72 +      // Given: 有効なGitHubユーザー名                                                                                                                        
+       73 +      const github = 'ken-yamada';                                                                                                                            
+       74 +                                                                                                                                                              
+       75 +      // When: githubフィールドを設定する                                                                                                                     
+       76 +      const profile = manager.setProfileField('github', github);                                                                                              
+       77 +                                                                                                                                                              
+       78 +      // Then: 設定した値が返る                                                                                                                               
+       79 +      expect(profile.github).toBe('ken-yamada');                                                                                                              
+       80 +    });                                                                                                                                                       
+       81 +                                                                                                                                                              
+       82 +    it('空文字列でValidationErrorをスローする', () => {                                                                                                       
+       83 +      // Given: 空文字列の値                                                                                                                                  
+       84 +                                                                                                                                                              
+       85 +      // When/Then: 空文字列を設定しようとするとValidationErrorをスローする                                                                                   
+       86 +      expect(() => manager.setProfileField('name', '')).toThrow(ValidationError);                                                                             
+       87 +    });                                                                                                                                                       
+       88 +                                                                                                                                                              
+       89 +    it('スペースのみの値でValidationErrorをスローする', () => {                                                                                               
+       90 +      // Given: スペースのみの値                                                                                                                              
+       91 +                                                                                                                                                              
+       92 +      // When/Then: スペースのみの値を設定しようとするとValidationErrorをスローする                                                                           
+       93 +      expect(() => manager.setProfileField('email', '   ')).toThrow(ValidationError);                                                                         
+       94 +    });                                                                                                                                                       
+       95 +                                                                                                                                                              
+       96 +    it('無効なキーでValidationErrorをスローする', () => {                                                                                                     
+       97 +      // Given: 無効なキー（型アサーションで意図的に無効な値を渡す）                                                                                          
+       98 +      const invalidKey = 'invalid' as ProfileKey;                                                                                                             
+       99 +                                                                                                                                                              
+      100 +      // When/Then: 無効なキーを指定するとValidationErrorをスローする                                                                                         
+      101 +      expect(() => manager.setProfileField(invalidKey, '山田健二')).toThrow(ValidationError);                                                                 
+      102 +    });                                                                                                                                                       
+      103 +                                                                                                                                                              
+      104 +    it('既存の値を上書きできる', () => {                                                                                                                      
+      105 +      // Given: nameが設定済みの状態                                                                                                                          
+      106 +      manager.setProfileField('name', '旧名前');                                                                                                              
+      107 +                                                                                                                                                              
+      108 +      // When: nameを別の値で上書きする                                                                                                                       
+      109 +      const profile = manager.setProfileField('name', '新名前');                                                                                              
+      110 +                                                                                                                                                              
+      111 +      // Then: 新しい値に更新されている                                                                                                                       
+      112 +      expect(profile.name).toBe('新名前');                                                                                                                    
+      113 +    });                                                                                                                                                       
+      114 +                                                                                                                                                              
+      115 +    it('値の前後のスペースをトリムして保存する', () => {                                                                                                      
+      116 +      // Given: 前後にスペースのある値                                                                                                                        
+      117 +                                                                                                                                                              
+      118 +      // When: スペース付きの値を設定する                                                                                                                     
+      119 +      const profile = manager.setProfileField('name', '  山田健二  ');                                                                                        
+      120 +                                                                                                                                                              
+      121 +      // Then: トリムされた値が保存される                                                                                                                     
+      122 +      expect(profile.name).toBe('山田健二');                                                                                                                  
+      123 +    });                                                                                                                                                       
+      124 +  });                                                                                                                                                         
+      125 +});                                                                                                                                                           
+
+● テストを再実行して全修正が通ることを確認します。    
+                                                       
+● Bash(npm test 2>&1 && npm run lint 2>&1 && npm run typecheck 2>&1)                                                                                                            
+  ⎿  > claude-code-book-chapter8@0.1.0 test                                                                                                                                     
+     > vitest run               
+     … +19 lines (ctrl+o to expand)                                                                                                                                             
+  ⎿  (timeout 1m)                                                                                                                                                             
+                                                                                                                                                                                
+● 22テスト全通過、lint・typecheck もエラーなし。                                                                                                                                
+                                                                                                                                                                                
+  フェーズ6 タスクリストを更新して、ステップ8へ進みます。                                                                                                                       
+                                                                                                                                                                                
+● Update(.steering/20260308-ユーザープロフィール編集/tasklist.md)                                                                                                               
+  ⎿  Added 1 line, removed 1 line                                                                                                                                               
+      71                                                                                                                                                                        
+      72  ## フェーズ7: ドキュメント更新                                                                                                                                        
+      73                                                                                                                                                                        
+      74 -- [ ] 実装後の振り返り（このファイルの下部に記録）                                                                                                                    
+      74 +- [x] 実装後の振り返り（このファイルの下部に記録）                                                                                                                  
+      75                                                                                                                                                                        
+      76  ---                                                                                                                                                                 
+      77                                                                                                                                                                        
+                                                                                                                                                                                
+● ステップ8: 振り返りとドキュメント更新                                                                                                                                         
+                                                                                                                                                                                
+● Update(.steering/20260308-ユーザープロフィール編集/tasklist.md)                                                                                                               
+  ⎿  Added 14 lines, removed 6 lines                                                                                                                                            
+       78  ## 実装後の振り返り                                                                                                                                                  
+       79                                                                                                                                                                       
+       80  ### 実装完了日                                                                                                                                                     
+       81 -{YYYY-MM-DD}                                                                                                                                                         
+       81 +2026-03-08                                                                                                                                                         
+       82                                                                                                                                                                       
+       83  ### 計画と実績の差分                                                                                                                                               
+       84                                                                                                                                                                       
+       85  **計画と異なった点**:                                                                                                                                                
+       86 -- {計画時には想定していなかった技術的な変更点}                                                                                                                       
+       86 +- 計画時は `src/types/errors.ts` に `ValidationError` のみを定義する予定だったが、`docs/development-guidelines.md` のエラー階層定義に従い `TaskCLIError`             
+          +基底クラスを追加した                                                                                                                                                 
+       87 +- CLIコマンド(`profile.ts`)を当初 `ConfigStorage` を直接インスタンス化する設計にしたが、アーキテクチャのレイヤー依存ルール違反のため、`ProfileManager`        
+          +を引数で受け取る設計に修正した                                                                                                                                
+       88 +- `ConfigStorage.save()` をシンプルな `writeFileSync` で実装したが、アーキテクチャのアトミック書き込み要件に従いリネーム方式 + `chmod 600` に変更した         
+       89   
+       90  **新たに必要になったタスク**:
+       91 -- {実装中に追加したタスク}                                                                                                                                    
+       91 +- バリデーターの指摘を受け、`ProfileManager` の無効キーテストケースを追加                                                                                     
+       92 +- テストに Given/When/Then コメントスタイルを追加してプロジェクト既存パターンと統一                                                                           
+       93   
+       94  ### 学んだこと
+       95   
+       96  **技術的な学び**:
+       97 -- {実装を通じて学んだ技術的な知見}                                                                                                                            
+       97 +- テストフレームワークが `docs/architecture.md` には Jest と記載されているが、実際のプロジェクトは Vitest を使用している。実装前に `package.json`             
+          +を確認することが重要                                                                                                                                          
+       98 +- `process.cwd()` をデフォルト引数に使うことで、テスト時に一時ディレクトリを渡せる柔軟な設計が可能                                                            
+       99 +- アトミック書き込みは `renameSync` をOSのアトミック操作として利用することで実現できる                                                                        
+      100   
+      101  **プロセス上の改善点**:
+      102 -- {タスク管理で良かった点}                                                                                                                                    
+      102 +- implementation-validator サブエージェントがアーキテクチャ仕様との差分を的確に検出してくれた。スペックドリブンな開発の効果を実感した                         
+      103 +- CLIレイヤーの依存関係ルール（データレイヤーへの直接アクセス禁止）は実装時に意識しにくいため、レビュー工程での検出が重要                                     
+      104   
+      105  ### 次回への改善提案
+      106 -- {次回の機能追加で気をつけること}                                                                                                                            
+      106 +- `docs/architecture.md` の技術スタック（Jest）と実際の `package.json`（Vitest）の不一致を修正する                                                            
+      107 +- CLIレイヤーの依存関係ルールを CLAUDE.md または development-guidelines.md に注意事項として追記する                                                           
+      108 +- CLIコマンドのユニットテスト（`vi.spyOn` によるコンソール出力・プロセス終了コードの検証）を次の実装サイクルで追加することを検討                              
+
+● ---                                    
+  /add-feature ユーザープロフィール編集 完了           
+
+  実装したファイル:                                                                                                                                                             
+   
+  ┌────────────────────────────────────────────┬──────────────────────────────────────────────────────────────┐                                                                 
+  │                  ファイル                  │                             役割                             │                                                               
+  ├────────────────────────────────────────────┼──────────────────────────────────────────────────────────────┤
+  │ src/types/index.ts                         │ UserProfile, Config, ProfileKey 型定義                       │
+  ├────────────────────────────────────────────┼──────────────────────────────────────────────────────────────┤
+  │ src/types/errors.ts                        │ TaskCLIError + ValidationError 基底クラス                    │
+  ├────────────────────────────────────────────┼──────────────────────────────────────────────────────────────┤
+  │ src/storage/ConfigStorage.ts               │ .task/config.json 読み書き（アトミック書き込み + chmod 600） │
+  ├────────────────────────────────────────────┼──────────────────────────────────────────────────────────────┤
+  │ src/services/ProfileManager.ts             │ プロフィールCRUDロジック・バリデーション                     │
+  ├────────────────────────────────────────────┼──────────────────────────────────────────────────────────────┤
+  │ src/cli/commands/profile.ts                │ runProfileShow / runProfileSet CLIコマンド                   │
+  ├────────────────────────────────────────────┼──────────────────────────────────────────────────────────────┤
+  │ tests/unit/storage/ConfigStorage.test.ts   │ ConfigStorage ユニットテスト（5件）                          │
+  ├────────────────────────────────────────────┼──────────────────────────────────────────────────────────────┤
+  │ tests/unit/services/ProfileManager.test.ts │ ProfileManager ユニットテスト（10件）                        │
+  └────────────────────────────────────────────┴──────────────────────────────────────────────────────────────┘
+
+  テスト結果: 22テスト全通過 / lint・typecheck エラーなし
+
+✻ Crunched for 8m 53s
